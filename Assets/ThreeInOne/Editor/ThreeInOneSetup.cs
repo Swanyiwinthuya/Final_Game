@@ -19,7 +19,7 @@ using UnityEngine.InputSystem.UI;
 public static class ThreeInOneSetup
 {
     const string GameTitle = "TRIPLE PLAY ARCADE";
-    const string AuthorName = "Swanyi";
+    const string AuthorName = "SwanYiWinThuYa-6540200";
 
     const string MenuScenePath = "Assets/ThreeInOne/Scenes/MainMenu.unity";
     const string DrivingScenePath = "Assets/Scenes/Prototype 1.unity";
