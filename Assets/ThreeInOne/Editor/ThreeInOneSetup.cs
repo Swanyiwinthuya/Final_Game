@@ -750,6 +750,7 @@ public static class ThreeInOneSetup
 
         ContentSizeFitter fitter = column.AddComponent<ContentSizeFitter>();
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        column.AddComponent<MenuHighlight>().highlightColor = Highlight;
         return rect;
     }
 
@@ -761,13 +762,7 @@ public static class ThreeInOneSetup
 
         Button button = text.gameObject.AddComponent<Button>();
         button.targetGraphic = text;
-        ColorBlock colors = button.colors;
-        colors.normalColor = Color.white;
-        colors.highlightedColor = Highlight;
-        colors.selectedColor = Color.white; // only hovering highlights a button
-        colors.pressedColor = new Color(1f, 0.55f, 0.15f);
-        colors.fadeDuration = 0.08f;
-        button.colors = colors;
+        button.transition = Selectable.Transition.None; // MenuHighlight colours the hovered item
 
         UnityEventTools.AddPersistentListener(button.onClick, action);
         return button;
