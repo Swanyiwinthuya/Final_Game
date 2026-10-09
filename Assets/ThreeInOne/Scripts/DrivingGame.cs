@@ -40,8 +40,8 @@ public class DrivingGame : MonoBehaviour
             ui.SetCenterMessage("");
         }
 
-        int progress = Mathf.Clamp(Mathf.RoundToInt((player.position.z - startZ) / (finishZ - startZ) * 100), 0, 100);
-        ui.SetHud("Lives " + lives + "     Time " + Mathf.CeilToInt(Mathf.Max(timeLeft, 0)) + "     " + progress + "%");
+        ui.SetProgress((player.position.z - startZ) / (finishZ - startZ));
+        ui.SetHud("Lives " + lives + "     Time " + Mathf.CeilToInt(Mathf.Max(timeLeft, 0)));
 
         if (player.position.z >= finishZ)
         {

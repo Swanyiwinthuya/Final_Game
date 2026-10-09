@@ -5,7 +5,7 @@ Three class games combined behind one Main Menu (Unity 6000.5.4f1, Built-In Rend
 | Menu item | Game | Scene | Controls |
 | --- | --- | --- | --- |
 | Mad Driver | Driving (Prototype 1) | `Assets/Scenes/Prototype 1.unity` | W/S or Up/Down to drive, A/D or Left/Right to steer. Reach the finish line within 50 seconds; 3 crashes and the car is wrecked. |
-| Fly Like a Bird | Flying (Challenge 1) | `Assets/Challenge 1/Challenge 1.unity` | Space, Up, W or click to flap. Fly through all 10 pipe gaps to win. |
+| Fly Like a Bird | Flying (Challenge 1) | `Assets/Challenge 1/Challenge 1.unity` | Up/Down arrows to pitch the plane. Fly through the gap in all 8 walls and reach the finish line; hitting a wall or the ground ends the run. |
 | I'm a Sumo and a Ball | Sumo (Challenge 4) | `Assets/Challenge 4/Challenge 4.unity` | W/S to roll, A/D to rotate the camera, Space for turbo. Knock the balls into the far goal; clear 5 waves to win, 3 balls in your own goal and you lose. |
 
 - **Main Menu** (`Assets/ThreeInOne/Scenes/MainMenu.unity`): pick a game or Exit.

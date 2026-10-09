@@ -205,13 +205,28 @@ public static class ThreeInOneSetup
         GameUI ui = canvas.gameObject.AddComponent<GameUI>();
         ui.pauseMenu = pauseMenu;
 
-        ui.hudText = CreateText(canvas.transform, "HUD", "", 46, TextAnchor.UpperCenter, FontStyle.Bold);
-        Place(ui.hudText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -20), new Vector2(1200, 70));
-        ui.hudText.gameObject.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.85f);
-        ui.hudText.transform.SetSiblingIndex(0);
+        Image hudPanel = CreateUIObject(canvas.transform, "HUD Panel").AddComponent<Image>();
+        hudPanel.color = new Color(0.03f, 0.04f, 0.09f, 0.55f);
+        hudPanel.raycastTarget = false;
+        Place(hudPanel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -14), new Vector2(820, 112));
+        hudPanel.transform.SetSiblingIndex(0);
+
+        ui.hudText = CreateText(hudPanel.transform, "HUD", "", 46, TextAnchor.MiddleCenter, FontStyle.Bold);
+        Place(ui.hudText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -8), new Vector2(800, 64));
+
+        Image bar = CreateUIObject(hudPanel.transform, "Progress Bar").AddComponent<Image>();
+        bar.color = new Color(1, 1, 1, 0.18f);
+        bar.raycastTarget = false;
+        Place(bar.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0, 14), new Vector2(740, 14));
+        Image fill = CreateStretchedImage(bar.transform, "Fill", Highlight);
+        fill.raycastTarget = false;
+        fill.rectTransform.anchorMax = new Vector2(0, 1);
+        ui.progressBar = bar.gameObject;
+        ui.progressFill = fill.rectTransform;
+        bar.gameObject.SetActive(false);
 
         ui.centerText = CreateText(canvas.transform, "Center Message", "", 64, TextAnchor.MiddleCenter, FontStyle.Bold);
-        Place(ui.centerText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 230), new Vector2(1400, 120));
+        Place(ui.centerText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0, 230), new Vector2(1700, 120));
         ui.centerText.gameObject.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.85f);
         ui.centerText.transform.SetSiblingIndex(1);
 
@@ -424,8 +439,8 @@ public static class ThreeInOneSetup
 
     // ---------- Flying game (Fly Like a Bird) ----------
 
-    // Turns the Challenge 1 plane scene into a flappy game. The pipes, clouds and
-    // finish line are created by FlappyGame when the scene starts.
+    // Keeps the Challenge 1 plane, its controller and its follow camera. The walls,
+    // clouds and finish line are created by PlaneGame when the scene starts.
     static void SetupFlyingScene(Scene scene, GameUI ui)
     {
         foreach (GameObject root in scene.GetRootGameObjects())
@@ -436,15 +451,14 @@ public static class ThreeInOneSetup
             }
             else if (root.name == "Obstacles")
             {
-                root.SetActive(false); // the old walls are replaced by the pipes
+                root.SetActive(false); // the plain grey walls are replaced by PlaneGame's
             }
         }
 
         Transform plane = FindByName(scene, "Player");
-        PlanePlayerControllerX oldController = plane.GetComponent<PlanePlayerControllerX>();
-        if (oldController != null)
+        if (plane.GetComponent<PlanePlayerControllerX>() == null)
         {
-            Object.DestroyImmediate(oldController);
+            plane.gameObject.AddComponent<PlanePlayerControllerX>();
         }
         plane.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
         Rigidbody body = plane.GetComponent<Rigidbody>();
@@ -455,20 +469,22 @@ public static class ThreeInOneSetup
         }
 
         Camera camera = FindInScene<Camera>(scene);
-        FollowPlayerX oldFollow = camera.GetComponent<FollowPlayerX>();
-        if (oldFollow != null)
+        FollowPlayerX follow = camera.GetComponent<FollowPlayerX>();
+        if (follow == null)
         {
-            Object.DestroyImmediate(oldFollow);
+            follow = camera.gameObject.AddComponent<FollowPlayerX>();
         }
+        follow.plane = plane.gameObject;
         camera.transform.SetPositionAndRotation(new Vector3(30, 0, 10), Quaternion.Euler(0, 270, 0));
         camera.fieldOfView = 60;
 
-        FlappyGame game = new GameObject(ManagerName).AddComponent<FlappyGame>();
+        PlaneGame game = new GameObject(ManagerName).AddComponent<PlaneGame>();
         game.plane = plane;
-        game.cameraTransform = camera.transform;
         game.ui = ui;
-        game.pipeMaterial = GetMaterial("Pipe", new Color(0.3f, 0.78f, 0.3f), 0.45f);
-        game.capMaterial = GetMaterial("PipeCap", new Color(0.2f, 0.62f, 0.24f), 0.45f);
+        game.scenery = new[] { FindByName(scene, "SkyDome"), FindByName(scene, "MountainSkybox") }.Where(t => t != null).ToArray();
+        game.wallMaterialA = GetMaterial("WallTeal", new Color(0.16f, 0.6f, 0.62f), 0.3f);
+        game.wallMaterialB = GetMaterial("WallCoral", new Color(0.93f, 0.45f, 0.36f), 0.3f);
+        game.trimMaterial = GetMaterial("WallTrim", new Color(1f, 0.82f, 0.25f), 0.3f, true);
         game.groundMaterial = GetMaterial("Grass", new Color(0.36f, 0.66f, 0.28f));
         game.cloudMaterial = GetMaterial("Cloud", Color.white, 0, true);
         game.finishLightMaterial = GetMaterial("FinishLight", Color.white);

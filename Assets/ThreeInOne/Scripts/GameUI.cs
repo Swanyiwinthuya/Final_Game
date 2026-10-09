@@ -8,6 +8,8 @@ public class GameUI : MonoBehaviour
     public PauseMenu pauseMenu;
     public Text hudText;
     public Text centerText;
+    public GameObject progressBar;
+    public RectTransform progressFill;
     public GameObject resultPanel;
     public Text resultTitle;
     public Text resultMessage;
@@ -21,6 +23,13 @@ public class GameUI : MonoBehaviour
     public void SetHud(string text)
     {
         hudText.text = text;
+    }
+
+    // Shows how far through the level the player is (0 to 1)
+    public void SetProgress(float progress)
+    {
+        progressBar.SetActive(true);
+        progressFill.anchorMax = new Vector2(Mathf.Clamp01(progress), 1);
     }
 
     public void SetCenterMessage(string text)
