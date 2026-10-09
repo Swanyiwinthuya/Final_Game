@@ -91,7 +91,7 @@ public static class ThreeInOneSetup
         foreach (string path in new[] { DrivingScenePath, FlyingScenePath, SumoScenePath })
         {
             Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
-            GameUI ui = BuildInGameMenu(scene, path != SumoScenePath);
+            GameUI ui = BuildInGameMenu(scene);
             if (path == DrivingScenePath)
             {
                 SetupDrivingScene(scene, ui);
@@ -99,6 +99,10 @@ public static class ThreeInOneSetup
             else if (path == FlyingScenePath)
             {
                 SetupFlyingScene(scene, ui);
+            }
+            else
+            {
+                SetupSumoScene(scene, ui);
             }
             EditorSceneManager.SaveScene(scene);
         }
@@ -142,7 +146,7 @@ public static class ThreeInOneSetup
         Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0, -150), new Vector2(1700, 160));
 
         RectTransform items = CreateMenuColumn(canvas.transform, "Menu Items", new Vector2(0, -90), 620, TextAnchor.UpperLeft);
-        Button first = CreateMenuButton(items, "Mad Driver", TextAnchor.MiddleLeft, menu.PlayDriving);
+        CreateMenuButton(items, "Mad Driver", TextAnchor.MiddleLeft, menu.PlayDriving);
         CreateMenuButton(items, "Fly Like a Bird", TextAnchor.MiddleLeft, menu.PlayFlying);
         CreateMenuButton(items, "I'm a Sumo and a Ball", TextAnchor.MiddleLeft, menu.PlaySumo);
         CreateMenuButton(items, "Exit", TextAnchor.MiddleLeft, menu.ExitGame);
@@ -150,23 +154,13 @@ public static class ThreeInOneSetup
         Text credit = CreateText(canvas.transform, "Credit", "By " + AuthorName, 34, TextAnchor.MiddleRight, FontStyle.Normal);
         Place(credit.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-60, 40), new Vector2(800, 60));
 
-        EventSystem.current = null;
-        foreach (GameObject root in scene.GetRootGameObjects())
-        {
-            EventSystem eventSystem = root.GetComponent<EventSystem>();
-            if (eventSystem != null)
-            {
-                eventSystem.firstSelectedGameObject = first.gameObject;
-            }
-        }
-
         Directory.CreateDirectory(Path.GetDirectoryName(MenuScenePath));
         EditorSceneManager.SaveScene(scene, MenuScenePath);
     }
 
     // ---------- In-Game Menu ----------
 
-    static GameUI BuildInGameMenu(Scene scene, bool withGameUI)
+    static GameUI BuildInGameMenu(Scene scene)
     {
         foreach (GameObject root in scene.GetRootGameObjects())
         {
@@ -200,7 +194,7 @@ public static class ThreeInOneSetup
         pauseMenu.firstButton = resume.gameObject;
         panel.gameObject.SetActive(false);
 
-        GameUI ui = withGameUI ? BuildGameUI(canvas, pauseMenu) : null;
+        GameUI ui = BuildGameUI(canvas, pauseMenu);
         EditorSceneManager.MarkSceneDirty(scene);
         return ui;
     }
@@ -481,6 +475,89 @@ public static class ThreeInOneSetup
         game.finishDarkMaterial = GetMaterial("FinishDark", new Color(0.08f, 0.08f, 0.08f));
     }
 
+    // ---------- Sumo game (I'm a Sumo and a Ball) ----------
+
+    // Opens up the Challenge 4 box into a small stadium: the walls keep their
+    // colliders but are hidden, and boards, goal frames, lines and trees are added.
+    static void SetupSumoScene(Scene scene, GameUI ui)
+    {
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            if (root.name == LevelName || root.name == ManagerName)
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        foreach (MeshRenderer wall in FindByName(scene, "Walls").GetComponentsInChildren<MeshRenderer>(true))
+        {
+            wall.enabled = false;
+        }
+
+        Transform level = new GameObject(LevelName).transform;
+        System.Random random = new System.Random(11);
+        const float groundY = -0.75f;
+        Material white = GetMaterial("FinishLight", Color.white);
+        Material blue = GetMaterial("BoardBlue", new Color(0.16f, 0.36f, 0.85f));
+        Material red = GetMaterial("BoardRed", new Color(0.85f, 0.2f, 0.2f));
+
+        Primitive(PrimitiveType.Cube, "Surroundings", level, new Vector3(0, groundY - 0.15f, 10), new Vector3(400, 0.2f, 400),
+            GetMaterial("Grass", new Color(0.36f, 0.66f, 0.28f)), false);
+
+        // Boards around the pitch: blue at the far (enemy) end, red at the player's end.
+        // They only face inwards, so they never block the camera when it swings outside.
+        Transform boards = NewGroup("Boards", level);
+        float boardY = groundY + 0.75f;
+        Panel(boards, "Side Board", new Vector3(-20.2f, boardY, 10), new Vector2(40.8f, 1.5f), 270, white);
+        Panel(boards, "Side Board", new Vector3(20.2f, boardY, 10), new Vector2(40.8f, 1.5f), 90, white);
+        foreach (int side in new[] { -1, 1 })
+        {
+            Panel(boards, "Far Board", new Vector3(side * 12.7f, boardY, 30.2f), new Vector2(15, 1.5f), 0, blue);
+            Panel(boards, "Near Board", new Vector3(side * 12.7f, boardY, -10.2f), new Vector2(15, 1.5f), 180, red);
+        }
+
+        // Goal frames
+        Transform frames = NewGroup("Goal Frames", level);
+        foreach (float z in new[] { 29.7f, -9.8f })
+        {
+            Material color = z > 0 ? blue : red;
+            float turn = z > 0 ? 0 : 180;
+            Panel(frames, "Post", new Vector3(-5.2f, groundY + 2.4f, z), new Vector2(0.5f, 4.8f), turn, color);
+            Panel(frames, "Post", new Vector3(5.2f, groundY + 2.4f, z), new Vector2(0.5f, 4.8f), turn, color);
+            Panel(frames, "Crossbar", new Vector3(0, groundY + 4.95f, z), new Vector2(10.9f, 0.5f), turn, color);
+        }
+
+        // Pitch markings
+        Transform lines = NewGroup("Lines", level);
+        float lineY = groundY + 0.02f;
+        Primitive(PrimitiveType.Cube, "Halfway Line", lines, new Vector3(0, lineY, 10), new Vector3(40, 0.02f, 0.25f), white, false);
+        Primitive(PrimitiveType.Cylinder, "Centre Spot", lines, new Vector3(0, lineY, 10), new Vector3(1.2f, 0.01f, 1.2f), white, false);
+        foreach (float z in new[] { 24f, -4f })
+        {
+            Primitive(PrimitiveType.Cube, "Box Line", lines, new Vector3(0, lineY, z), new Vector3(18, 0.02f, 0.25f), white, false);
+            float edge = z > 10 ? 27 : -7;
+            Primitive(PrimitiveType.Cube, "Box Line", lines, new Vector3(-9, lineY, edge), new Vector3(0.25f, 0.02f, 6), white, false);
+            Primitive(PrimitiveType.Cube, "Box Line", lines, new Vector3(9, lineY, edge), new Vector3(0.25f, 0.02f, 6), white, false);
+        }
+
+        // Trees and rocks outside the boards
+        GameObject treePrefab = GetTreePrefab();
+        Transform outside = NewGroup("Trees", level);
+        for (int i = 0; i < 70; i++)
+        {
+            float angle = (float)(random.NextDouble() * Mathf.PI * 2);
+            float distance = 34 + (float)random.NextDouble() * 40;
+            Vector3 position = new Vector3(Mathf.Cos(angle) * distance, groundY, 10 + Mathf.Sin(angle) * distance);
+            GameObject tree = (GameObject)PrefabUtility.InstantiatePrefab(treePrefab, outside);
+            tree.transform.position = position;
+            tree.transform.localScale = Vector3.one * (0.9f + (float)random.NextDouble() * 1.1f);
+        }
+
+        SumoGame game = new GameObject(ManagerName).AddComponent<SumoGame>();
+        game.spawnManager = FindInScene<SpawnManagerX>(scene);
+        game.ui = ui;
+    }
+
     // ---------- Level helpers ----------
 
     static GameObject LoadPrefab(string name)
@@ -528,6 +605,20 @@ public static class ThreeInOneSetup
         {
             Object.DestroyImmediate(primitive.GetComponent<Collider>());
         }
+    }
+
+    // A flat panel that is only visible from the side it faces
+    static void Panel(Transform parent, string name, Vector3 position, Vector2 size, float turn, Material material)
+    {
+        GameObject panel = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        panel.name = name;
+        panel.transform.SetParent(parent, false);
+        panel.transform.SetPositionAndRotation(position, Quaternion.Euler(0, turn, 0));
+        panel.transform.localScale = new Vector3(size.x, size.y, 1);
+        MeshRenderer renderer = panel.GetComponent<MeshRenderer>();
+        renderer.sharedMaterial = material;
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        Object.DestroyImmediate(panel.GetComponent<Collider>());
     }
 
     static void Wall(Transform parent, Vector3 position, Vector3 size)
@@ -673,7 +764,7 @@ public static class ThreeInOneSetup
         ColorBlock colors = button.colors;
         colors.normalColor = Color.white;
         colors.highlightedColor = Highlight;
-        colors.selectedColor = Highlight;
+        colors.selectedColor = Color.white; // only hovering highlights a button
         colors.pressedColor = new Color(1f, 0.55f, 0.15f);
         colors.fadeDuration = 0.08f;
         button.colors = colors;

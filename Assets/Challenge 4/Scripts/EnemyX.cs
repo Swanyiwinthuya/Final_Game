@@ -7,12 +7,14 @@ public class EnemyX : MonoBehaviour
     public float speed;
     private Rigidbody enemyRb;
     private GameObject playerGoal;
+    private SumoGame game;
 
     // Start is called before the first frame update
     void Start()
     {
         enemyRb = GetComponent<Rigidbody>();
         playerGoal = GameObject.Find("Player Goal");
+        game = GameObject.Find("Game Manager").GetComponent<SumoGame>();
 
         // Optional challenge: use the speed selected for the current wave.
         SpawnManagerX spawnManager = GameObject.Find("Spawn Manager").GetComponent<SpawnManagerX>();
@@ -30,13 +32,15 @@ public class EnemyX : MonoBehaviour
 
     private void OnCollisionEnter(Collision other)
     {
-        // If enemy collides with either goal, destroy it
+        // If enemy collides with either goal, destroy it and tell the game who scored
         if (other.gameObject.name == "Enemy Goal")
         {
+            game.PlayerScored();
             Destroy(gameObject);
         } 
         else if (other.gameObject.name == "Player Goal")
         {
+            game.EnemyScored();
             Destroy(gameObject);
         }
 

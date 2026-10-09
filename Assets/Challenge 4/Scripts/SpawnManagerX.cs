@@ -18,6 +18,12 @@ public class SpawnManagerX : MonoBehaviour
 
 
     public GameObject player; 
+    private SumoGame game;
+
+    void Start()
+    {
+        game = GameObject.Find("Game Manager").GetComponent<SumoGame>();
+    }
 
     // Update is called once per frame
     void Update()
@@ -26,6 +32,13 @@ public class SpawnManagerX : MonoBehaviour
 
         if (enemyCount == 0)
         {
+            // The game is won once the last wave has been cleared
+            if (waveCount > game.wavesToWin)
+            {
+                game.AllWavesCleared();
+                return;
+            }
+
             // Optional challenge: every new wave moves a little faster.
             if (waveCount > 1)
             {
